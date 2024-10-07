@@ -5,7 +5,7 @@ mkdir -p release/pi/
 docker buildx build  -f DockerfilePi . \
    --platform linux/arm64 \
    --target=artifact \
-   --output type=local,dest=$(pwd)/release/pi \
+   --output type=local,dest=$(pwd)/releases/pi \
    --build-arg GITHUB_REF_NAME=$GITHUB_REF_NAME \
    --build-arg GITHUB_REF_TYPE=$GITHUB_REF_TYPE \
    --build-arg GIT_COMMIT_LOG="git log -1 --format='%ci %H %s'" \
