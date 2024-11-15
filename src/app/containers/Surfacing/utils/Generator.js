@@ -286,11 +286,9 @@ export default class Generator {
     }
 
     returnToZero = () => {
-        const z = this.getSafeZValue();
-
         return [
             '(Returning to Zero)',
-            `G0 Z${z}`,
+            'G53 G90 G0 Z0',
             'G0 X0 Y0',
             '(End of Returning to Zero)',
             ''
