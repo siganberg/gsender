@@ -55,6 +55,7 @@ export default class Generator {
         const dwell = shouldDwell ? [`G04 P${SURFACING_DWELL_DURATION}`] : [];
         const m7 = mist ? ['M7'] : [];
         const m8 = flood ? ['M8'] : [];
+        const zFullRetract = 'G53 G0 Z0; Safely retract spindle';
 
         const depth = skimDepth;
         const gcodeArr = [
@@ -63,7 +64,7 @@ export default class Generator {
             wcs,
             units === METRIC_UNITS ? 'G21 ;mm' : 'G20 ;inches',
             'G90',
-            'G53 G0 Z-5; Safely retract the spindle first before moving',
+            zFullRetract,
             'G0 X0 Y0',
             ...m7,
             ...m8,
@@ -79,6 +80,7 @@ export default class Generator {
             const gcodeLayer = generateGcode({
                 depth: depth < maxDepth ? depth : maxDepth,
                 count,
+                isFinal: depth >= maxDepth
             });
             arr.push(...gcodeLayer);
 
@@ -97,8 +99,9 @@ export default class Generator {
 
         gcodeArr.push(
             '(Footer)',
-            ...m9,
             'M5 ;Turn off spindle',
+            zFullRetract,
+            ...m9,
             ...dwell,
             '(End of Footer)',
         );
@@ -115,7 +118,7 @@ export default class Generator {
      * @param {number} count - Count value keeping track of the number of layers
      * @returns {array} - Returns the generated gcode set in an array
      */
-    generateGcode = ({ depth, count }) => {
+    generateGcode = ({ depth, count, isFinal }) => {
         const {
             bitDiameter,
             stepover,
@@ -157,6 +160,7 @@ export default class Generator {
             axisFactors,
             cutDirectionFlipped,
             startPosition,
+            isFinal,
         };
 
         const executeSurfacing = {
@@ -323,8 +327,12 @@ export default class Generator {
         return zVal;
     }
 
-    returnToZero = () => {
+    returnToZero = (isFinal) => {
         const z = this.getSafeZValue();
+
+        if (isFinal) {
+            return [ `G0 Z${z}` ];
+        }
 
         return [
             '(Returning to Zero)',
@@ -333,6 +341,7 @@ export default class Generator {
             '(End of Returning to Zero)',
             '',
         ];
+
     };
 
     generateSpiral = (options) => {
@@ -493,7 +502,7 @@ export default class Generator {
             getNewStartPos,
             getNewEndPos,
         );
-        const returnToStart = returnToZero();
+        const returnToStart = returnToZero(options.isFinal);
         const spiralStartArea = enterSpiralStartArea(
             stepoverAmount * xFactor,
             stepoverAmount * yFactor,
@@ -826,7 +835,7 @@ export default class Generator {
             getNewStartPos,
             getNewEndPos,
         );
-        const returnToStart = returnToZero();
+        const returnToStart = returnToZero(options.isFinal);
 
         const startArea = [
             '(Entering Start Area)',
