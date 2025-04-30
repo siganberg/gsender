@@ -341,15 +341,17 @@ class GrblHalController {
 
                 // // M6 Tool Change
                 if (_.includes(words, 'M6')) {
-                    const passthroughM6 = _.get(this.toolChangeContext, 'passthrough', true);
-                    if (passthroughM6) {
-                        log.debug('Passthrough M6 skipping other strategies');
-                        return line;
+                    const passthroughM6 = _.get(this.toolChangeContext, 'passthrough', false);
+                    console.log(this.toolChangeContext);
+                    console.log(passthroughM6);
+                    if (!passthroughM6) {
+                        log.debug('M6 Tool Change');
+                        this.feeder.hold({
+                            data: 'M6',
+                            comment: commentString
+                        }); // Hold reason
+                        line = line.replace('M6', '(M6)');
                     }
-
-                    log.debug('M6 Tool Change');
-                    this.feeder.hold({ data: 'M6', comment: commentString }); // Hold reason
-                    line = line.replace('M6', '(M6)');
                 }
 
                 if (this.isInRotaryMode) {
@@ -467,9 +469,6 @@ class GrblHalController {
                 if (spindleCommand) {
                     this.updateSpindleModal(spindleCommand);
                 }
-
-                /* Emit event to UI for toolchange handler */
-
 
                 if (_.includes(words, 'M6')) {
                     const passthroughM6 = _.get(this.toolChangeContext, 'passthrough', true);
@@ -1740,6 +1739,11 @@ class GrblHalController {
 
                 this.write('\x18'); // ^x
             },
+            'reset:soft': () => {
+                this.workflow.stop();
+                this.feeder.reset();
+                this.write('\x19'); // HAL soft stop command
+            },
             'reset:limit': () => {
                 this.workflow.stop();
                 this.feeder.reset();
@@ -1914,6 +1918,7 @@ class GrblHalController {
             },
             'jog:start': () => {
                 let [axes, feedrate = 1000, units = METRIC_UNITS] = args;
+                console.log(args);
                 //const JOG_COMMAND_INTERVAL = 80;
                 let unitModal = (units === METRIC_UNITS) ? 'G21' : 'G20';
                 let { $20, $130, $131, $132, $23, $13, $40 } = this.settings.settings;
@@ -2001,8 +2006,10 @@ class GrblHalController {
                     axes.F *= 0.8;
                     axes.F = axes.F.toFixed(3);
                 }
+                console.log(axes);
 
                 const jogCommand = `$J=${unitModal}G91 ` + map(axes, (value, letter) => ('' + letter.toUpperCase() + value)).join(' ');
+                console.log(jogCommand);
                 this.writeln(jogCommand);
             },
             'jog:stop': () => {

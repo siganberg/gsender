@@ -1,20 +1,22 @@
-import { Button } from 'app/components/Button';
+import { RootState } from 'app/store/redux';
+import { useSelector } from 'react-redux';
 import controller from 'app/lib/controller.ts';
-import {useSelector} from "react-redux";
-import {RootState} from "app/store/redux";
-import {GRBLHAL} from "app/constants";
-import {delay} from "lodash";
-import {Confirm} from "app/components/ConfirmationDialog/ConfirmationDialogLib.ts";
-import autoSpinIcon from "app/features/Config/assets/images/autospin.svg";
+import { Button } from 'app/components/Button';
+import autoSpinIcon from '../../assets/images/autospin.svg';
+import { delay } from 'lodash';
+import { Confirm } from 'app/components/ConfirmationDialog/ConfirmationDialogLib.ts';
+import { GRBLHAL } from 'app/constants';
 
-function startSpindle() {
-    controller.command('gcode', 'M3 S1000');
-}
-function startSpindleCCW() {
-    controller.command('gcode', 'M4 S1000');
-}
-function stopSpindle() {
-    controller.command('gcode', 'M5 S0');
+function longmillAutospinSetup() {
+    delay(() => {
+        Confirm({
+            title: 'Restart your Controller',
+            content:
+                'Please manually restart your CNC controller (power cycle) and reconnect to gSender for these settings to take effect.',
+            confirmLabel: 'OK',
+            hideClose: true,
+        });
+    }, 500);
 }
 
 function autospinSetup(firmwareType: string = null) {
@@ -93,7 +95,7 @@ function AutoSpinIcon() {
     );
 }
 
-export function SpindleWizard() {
+export function AutoSpinSetup() {
     const connected = useSelector(
         (state: RootState) => state.connection.isConnected,
     );
@@ -102,17 +104,7 @@ export function SpindleWizard() {
     );
 
     return (
-        <div className="flex flex-row gap-2 items-center">
-            <Button variant="primary" onClick={startSpindle}>
-                For
-            </Button>
-            <Button variant="primary" onClick={startSpindleCCW}>
-                Rev
-            </Button>
-            <Button variant="primary" onClick={stopSpindle}>
-                Stop
-            </Button>
-            |
+        <div className="flex flex-col gap-4">
             <Button
                 onClick={() => autospinSetup(firmwareType)}
                 className={'flex flex-row justify-start'}
