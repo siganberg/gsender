@@ -2009,8 +2009,7 @@ class GrblHalController {
                 console.log(axes);
 
                 const jogCommand = `$J=${unitModal}G91 ` + map(axes, (value, letter) => ('' + letter.toUpperCase() + value)).join(' ');
-                console.log(jogCommand);
-                this.writeln(jogCommand);
+                this.writeln(jogCommand, {}, true);
             },
             'jog:stop': () => {
                 this.write('\x85');
@@ -2168,11 +2167,17 @@ class GrblHalController {
         log.silly(`> ${data}`);
     }
 
-    writeln(data, context) {
+    writeln(data, context, emit = false) {
         if (_.includes(GRBLHAL_REALTIME_COMMANDS, data)) {
             this.write(data, context);
         } else {
             this.write(data + '\n', context);
+        }
+        if (emit) {
+            this.emit('serialport:write', data + '\n', {
+                ...context,
+                source: WRITE_SOURCE_FEEDER
+            });
         }
     }
 
