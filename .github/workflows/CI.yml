@@ -6,7 +6,7 @@ on:
     branches:
       - master
       - dev
-      - feature/macos-splitting-x64-arm64
+      - chris-test
     # Sequence of patterns matched against refs/tags
     tags:
       - '*'
