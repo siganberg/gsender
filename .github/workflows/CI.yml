@@ -153,7 +153,7 @@ jobs:
         if: github.ref_type == 'branch'
         run: yarn run build-latest
       - name: Build macOS binaries
-        run: yarn run build:macos-x64
+        run: yarn run build:macos
       - name: Prepare release assets
         shell: bash
         run: |
