@@ -107,7 +107,7 @@ jobs:
   #         draft: true
   build-macos:
     name: Build macOS packages
-    runs-on: macos-latest
+    runs-on: macos-15
     strategy:
       matrix:
         node-version: [20.x]
