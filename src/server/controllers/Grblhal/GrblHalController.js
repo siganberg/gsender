@@ -108,6 +108,28 @@ class GrblHalController {
     connectionEventListener = {
         data: (data) => {
             log.silly(`< ${data}`);
+            // Log status reports that contain tool info
+            if (data.toString().includes('T:')) {
+                console.log('Status report with T:', data.toString().trim()); // eslint-disable-line no-console
+
+                // Parse tool directly from the raw data
+                const line = data.toString();
+                const tIndex = line.indexOf('T:');
+                const nextPipe = line.indexOf('|', tIndex);
+                const nextBracket = line.indexOf('>', tIndex);
+                const endIndex = nextPipe !== -1 ? nextPipe : nextBracket;
+                const toolString = line.substring(tIndex, endIndex);
+                const toolValue = toolString.replace('T:', '');
+                const toolNum = Number(toolValue);
+
+                // Update controller state directly and emit to frontend
+                if (!Number.isNaN(toolNum)) {
+                    this.state.status = this.state.status || {};
+                    this.state.status.currentTool = toolNum;
+                    console.log('Setting currentTool directly to:', toolNum); // eslint-disable-line no-console
+                    this.emit('controller:state', GRBLHAL, this.state);
+                }
+            }
             this.runner.parse('' + data);
         },
         close: (err) => {
