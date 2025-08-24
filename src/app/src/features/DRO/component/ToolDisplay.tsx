@@ -9,15 +9,13 @@ export function ToolDisplay() {
         get(state, 'connection.isConnected', false)
     );
 
-    if (!isConnected || currentTool === undefined) {
-        return null;
-    }
+    const displayValue = isConnected && currentTool !== undefined ? `T${currentTool}` : '--';
 
     return (
-        <div className="absolute top-2 right-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm font-mono">
-            <span className="text-gray-600 dark:text-gray-400">Tool:</span>
-            <span className="ml-1 font-bold text-gray-900 dark:text-gray-100">
-                T{currentTool}
+        <div className="absolute -top-2 -right-1 max-xl:-top-1 max-xl:-right-1 px-2 max-xl:px-1 py-1.5 max-xl:py-1 text-xs font-semibold text-gray-600 bg-gray-300 rounded-tr items-center text-center rounded-bl-lg dark:bg-gray-700 dark:text-gray-400">
+            <span>
+                Tool:
+                <br /> <span className="text-blue-500 text-sm font-bold">{displayValue}</span>
             </span>
         </div>
     );
