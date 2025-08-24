@@ -10,7 +10,7 @@ import { useTypedSelector } from 'app/hooks/useTypedSelector';
 import { NotificationDisplay } from 'app/features/NotificationsArea/NotificationDisplay';
 import useKeybinding from 'app/lib/useKeybinding';
 import useShuttleEvents from 'app/hooks/useShuttleEvents';
-import { GENERAL_CATEGORY } from 'app/constants';
+import { TOOLBAR_CATEGORY } from 'app/constants';
 import reduxStore from 'app/store/redux';
 import { readAllNotifications } from 'app/store/redux/slices/preferences.slice.ts';
 
@@ -31,12 +31,12 @@ const NotificationsArea = () => {
 
     const shuttleControlEvents = {
         DISPLAY_NOTIFICATIONS: {
-            title: 'Toggle Notifications Display',
+            title: 'Display Notifications',
             keys: '',
             cmd: 'DISPLAY_NOTIFICATIONS',
             preventDefault: false,
             isActive: true,
-            category: GENERAL_CATEGORY,
+            category: TOOLBAR_CATEGORY,
             callback: () => setOpen((prev) => !prev),
         },
     };
@@ -48,7 +48,7 @@ const NotificationsArea = () => {
         <Popover open={open} onOpenChange={markNotificationsRead}>
             <PopoverTrigger asChild>
                 <button className="relative max-sm:hidden">
-                    <LuBell className="w-6 h-6 text-gray-500 cursor-pointer hover:text-gray-700" />
+                    <LuBell className="w-6 h-6 text-gray-400 cursor-pointer" />
                     {notifications && notifications.length > 0 && (
                         <div className="absolute -top-2 -right-1 bg-red-500 text-white text-xs rounded-full min-w-4 min-h-4 flex items-center justify-center">
                             {notifications.length}

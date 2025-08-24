@@ -40,7 +40,7 @@ export type ButtonProps = ButtonVariants &
         className?: string;
         text?: string;
         active?: boolean;
-        size?: 'mini' | 'xs' | 'sm' | 'md' | 'lg' | 'icon';
+        size?: 'mini' | 'xs' | 'sm' | 'md' | 'lg' | 'icon' | 'custom';
     };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

@@ -180,6 +180,8 @@ class GrblHalController {
         axsReportCount: 0
     };
 
+    parserStateEnabled = false;
+
     actionTime = {
         queryParserState: 0,
         queryStatusReport: 0,
@@ -713,7 +715,8 @@ class GrblHalController {
         });
 
         this.runner.on('ok', (res) => {
-            if (this.actionMask.queryParserState.reply) {
+            // we only query when parser state option in $10 is disabled
+            if (this.actionMask.queryParserState.reply && !this.parserStateEnabled) {
                 if (this.actionMask.replyParserState) {
                     this.actionMask.replyParserState = false;
                     this.emit('serialport:read', res.raw);
@@ -721,6 +724,15 @@ class GrblHalController {
                 this.actionMask.queryParserState.reply = false;
 
                 return;
+                // if parser state is enabled, it does not send an 'ok' when the state auto emits
+                // so only consume the ok if the user entered $G
+            } else if (this.actionMask.queryParserState.reply && this.parserStateEnabled) {
+                if (this.actionMask.replyParserState) {
+                    this.actionMask.replyParserState = false;
+                    this.actionMask.queryParserState.reply = false;
+                    this.emit('serialport:read', res.raw);
+                    return;
+                }
             }
 
             const { hold, sent, received } = this.sender.state;
@@ -941,6 +953,17 @@ class GrblHalController {
                     this.emit('serialport:read', `${res.name}=${res.value}`);
                 }
             }
+
+            // check if parser state option is enabled
+            if (res.name === '$10') {
+                const value = res.value;
+                // eslint-disable-next-line no-bitwise
+                if (value & 512) {
+                    this.parserStateEnabled = true;
+                } else {
+                    this.parserStateEnabled = false;
+                }
+            }
         });
 
         this.runner.on('info', (res) => {
@@ -1041,7 +1064,8 @@ class GrblHalController {
         // TODO:  Do we need to not do this during toolpaths if it's a realtime command now?
         const queryParserState = _.throttle(() => {
             // Check the ready flag
-            if (!(this.ready)) {
+            // if parser state enabled, we dont need to query the parser state
+            if (!(this.ready) || this.parserStateEnabled) {
                 return;
             }
 
@@ -1358,12 +1382,34 @@ class GrblHalController {
                 let counter = 3;
                 const interval = setInterval(() => {
                     // check if 3 tries or controller is ready
-                    if (this.ready || counter <= 0) {
+                    if (this.ready) {
                         clearInterval(interval);
+                        return;
+                    } else if (counter <= 0) {
+                        clearInterval(interval);
+                        // The startup message always prints upon startup, after a reset, or at program end.
+                        // Setting the initial state when Grbl has completed re-initializing all systems.
+                        this.clearActionValues();
+
+                        // Set ready flag to true when a startup message has arrived
+                        this.ready = true;
+
+                        // Rewind any files in the sender
+                        this.workflow.stop();
+
+                        if (!this.initialized) {
+                            this.initialized = true;
+
+                            // Initialize controller
+                            this.initController();
+                        }
+
+                        this.connection.writeImmediate('$ES\n$ESH\n$EG\n$EA\n$spindles\n');
                         return;
                     }
                     if (this.connection) {
-                        this.write('$I\n');
+                        // this.write('$I\n');
+                        this.write('\x18');
                     }
                     counter--;
                 }, 3000);
@@ -1597,7 +1643,7 @@ class GrblHalController {
 
                     const wcs = _.get(this.state, 'parserstate.modal.wcs', 'G54');
                     let modalWcs = modal.wcs;
-                    if (modalWcs !== wcs && modalWcs !== 'G54') {
+                    if (modalWcs !== wcs && modalWcs === 'G54') {
                         modalWcs = wcs;
                     }
                     const setModalGcode = modal.motion === 'G2' || modal.motion === 'G3' ? `${modal.motion} X${xVal.toFixed(3)} J0 F${feedRate}` : `${modal.motion}`;
