@@ -187,19 +187,6 @@ class GrblHalLineParserResultStatus {
             payload.accessoryState = _.get(result, 'A[0]', '');
         }
 
-        // Current Tool (grblHAL extension in complete status report 0x87)
-        // Parse T:2 by finding T: and extracting until next | or >
-        if (line.includes('T:')) {
-            const tIndex = line.indexOf('T:');
-            const nextPipe = line.indexOf('|', tIndex);
-            const nextBracket = line.indexOf('>', tIndex);
-            const endIndex = nextPipe !== -1 ? nextPipe : nextBracket;
-            const toolString = line.substring(tIndex, endIndex);
-            const toolValue = toolString.replace('T:', '');
-            payload.currentTool = Number(toolValue);
-            console.log('Storing: Tool ', toolValue);
-        }
-
         return {
             type: GrblHalLineParserResultStatus,
             payload: payload
