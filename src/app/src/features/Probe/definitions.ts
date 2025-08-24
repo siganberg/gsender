@@ -28,6 +28,8 @@ export interface ProbeProfile {
     touchplateType: TOUCHPLATE_TYPES_T;
     ballDiameter?: number;
     xyPlungeDistance?: number;
+    zPlungeDistance?: number;
+    zThickness3DTouch?: number;
 }
 
 export interface ProbeCommand {

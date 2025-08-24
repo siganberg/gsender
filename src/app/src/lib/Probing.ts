@@ -705,6 +705,22 @@ export const get3DTouchProbeRoutine = (
     const { axes, ballDiameter = 2, xyPlungeDistance = 10, zProbeDistance } = options;
     const code: Array<string> = [];
     const ballRadius = ballDiameter / 2;
+    
+    // Determine user's original units
+    const { units, $13 } = options;
+    const isImperialUser = units !== METRIC_UNITS || $13 === '1';
+    const originalUnitsCode = isImperialUser ? 'G20' : 'G21';
+    
+    const processedOptions = {
+        ...options,
+        toolDiameter: ballDiameter,
+        direction: options.direction || 0,
+        retract: 4,
+        xyThickness: 0,
+        // Keep the original zThickness from options instead of overriding to 0
+    };
+    
+    const standardProcessedOptions = updateOptionsForDirection(processedOptions, processedOptions.direction);
 
     // Handle specific probe commands for 3D Touch Probe
     if (probeCommand === 'Circle Hole') {
