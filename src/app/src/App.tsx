@@ -12,6 +12,7 @@ import ConfirmationDialog from 'app/components/ConfirmationDialog/ConfirmationDi
 
 import { Toaster } from './components/shadcn/Sonner';
 import { ReactRoutes } from './react-routes';
+import { VirtualKeyboardProvider } from './components/VirtualKeyboard';
 
 function App() {
     useEffect(() => {
@@ -40,16 +41,18 @@ function App() {
     return (
         <>
             <ReduxProvider store={reduxStore}>
-                <ConfirmationDialog />
-                <Toaster
-                    richColors
-                    closeButton
-                    theme="light"
-                    visibleToasts={5}
-                />
-                <HashRouter>
-                    <ReactRoutes />
-                </HashRouter>
+                <VirtualKeyboardProvider>
+                    <ConfirmationDialog />
+                    <Toaster
+                        richColors
+                        closeButton
+                        theme="light"
+                        visibleToasts={5}
+                    />
+                    <HashRouter>
+                        <ReactRoutes />
+                    </HashRouter>
+                </VirtualKeyboardProvider>
             </ReduxProvider>
         </>
     );

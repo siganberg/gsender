@@ -4,6 +4,7 @@ import StatusIcons from 'app/features/StatusIcons';
 import { RemoteMenuFlyout } from 'app/features/RemoteMode/components/RemoteMenuFlyout.tsx';
 import CenterArea from './CenterArea';
 import { IconUpdater } from 'app/features/IconUpdater';
+import { VirtualKeyboardToggle } from 'app/components/VirtualKeyboard';
 
 export const TopBar = () => {
     return (
@@ -16,6 +17,8 @@ export const TopBar = () => {
             <CenterArea />
 
             <StatusIcons />
+
+            <VirtualKeyboardToggle className="relative" />
 
             <SpindleLaserStatus />
         </div>

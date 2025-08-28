@@ -8,11 +8,14 @@ import Rotary from '../Rotary';
 import Macros from '../Macros';
 import { useWidgetState } from 'app/hooks/useWidgetState';
 import { useWorkspaceState } from 'app/hooks/useWorkspaceState';
+import VirtualKeyboardDemo from '../../components/VirtualKeyboard/VirtualKeyboardDemo';
 
 interface TabItem {
     label: string;
     content: React.ComponentType<{ isActive: boolean }>;
 }
+
+const VirtualKeyboardWrapper = () => <VirtualKeyboardDemo />;
 
 const tabs = [
     {
@@ -38,6 +41,10 @@ const tabs = [
     {
         label: 'Console',
         content: Console,
+    },
+    {
+        label: 'Virtual Keyboard',
+        content: VirtualKeyboardWrapper,
     },
 ];
 
