@@ -254,13 +254,13 @@ export const Tabs = ({ items = [], tabSetId = 'default' }: TabbedProps) => {
                         </button>
                     </div>
                 </div>
-                <div className="block w-full h-full">
+                <div className="block w-full overflow-hidden">
                     {tabItems &&
                         tabItems.map(({ label, content: Content }) => (
                             <div
                                 key={label}
                                 className={classNames(
-                                    'w-full h-full',
+                                    'w-full overflow-hidden',
                                     activeTab === label ? 'block' : 'hidden',
                                 )}
                             >
