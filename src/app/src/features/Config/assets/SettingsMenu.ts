@@ -65,7 +65,8 @@ export type gSenderSettingType =
     | 'api'
     | 'jog'
     | 'location'
-    | 'wizard';
+    | 'wizard'
+    | 'server';
 
 export type gSenderSettingsValues = number | string | boolean;
 
@@ -73,6 +74,7 @@ export interface gSenderSetting {
     label?: string;
     type: gSenderSettingType;
     key?: string;
+    serverKey?: string; // For server-side storage
     description?: string | any[];
     options?: string[] | number[];
     unit?: string;
@@ -1430,11 +1432,11 @@ export const SettingsMenu: SettingsMenuSection[] = [
                     { type: 'eeprom', eID: '$666' },
                     {
                         label: 'Repurpose Door as Pause',
-                        key: 'workspace.repurposeDoorAsPause',
-                        type: 'boolean',
+                        type: 'api',
+                        serverKey: 'repurposeDoorAsPause',
                         defaultValue: false,
                         description:
-                            'When enabled, Door status will be displayed as "Pause" instead of "Door". Useful for woodworking CNCs that don\'t use an enclosure door.',
+                            'When enabled, Door status will be displayed as "Pause" instead of "Door". Useful for woodworking CNCs that don\'t use an enclosure door. This setting is now stored server-side and shared across all devices.',
                         hidden: () => {
                             return !controller.portOpen;
                         },

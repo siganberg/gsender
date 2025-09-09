@@ -128,6 +128,12 @@ function populateSettingsValues(
                     o.defaultValue = fetchDefaultValue(o.key);
                     globalValueReference.push({ ...o });
                     index++;
+                } else if (o.type === 'api' && o.serverKey) {
+                    // Handle server-side API settings
+                    o.value = o.defaultValue; // Use default value initially
+                    o.globalIndex = index;
+                    globalValueReference.push({ ...o });
+                    index++;
                 }
             });
         });

@@ -25,6 +25,7 @@ import store from 'app/store';
 import { FaMicrochip } from 'react-icons/fa6';
 import { GRBLHAL } from 'app/constants';
 import { JogInput } from 'app/features/Config/components/SettingInputs/JogInput.tsx';
+import { ServerSettingInput } from 'app/features/Config/components/SettingInputs/ServerSettingInput.tsx';
 
 interface SettingRowProps {
     setting: gSenderSetting;
@@ -120,6 +121,14 @@ function returnSettingControl(
             return setting.wizard();
         case 'jog':
             return <JogInput value={value} index={index} onChange={handler} />;
+        case 'api':
+            return (
+                <ServerSettingInput
+                    setting={setting}
+                    index={index}
+                    onChange={handler}
+                />
+            );
         default:
             return setting.type;
     }

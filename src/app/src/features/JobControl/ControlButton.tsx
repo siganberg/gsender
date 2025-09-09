@@ -12,6 +12,7 @@ import { GRBL_ACTIVE_STATES_T } from 'app/definitions/general';
 import { WORKFLOW_STATES_T } from 'app/store/definitions';
 import controller from 'app/lib/controller';
 import store from 'app/store';
+import { getServerSettingSync } from 'app/features/Config/utils/ServerSettings.ts';
 import {
     CARVING_CATEGORY,
     GRBL,
@@ -64,7 +65,7 @@ const ControlButton: React.FC<ControlButtonProps> = ({
 }) => {
     function canRun(reduxActiveState?: GRBL_ACTIVE_STATES_T) {
         const currentActiveState = reduxActiveState || activeState;
-        const repurposeDoorAsPause = store.get('workspace.repurposeDoorAsPause', false);
+        const repurposeDoorAsPause = getServerSettingSync('repurposeDoorAsPause', false);
         
         return (
             currentActiveState === GRBL_ACTIVE_STATE_IDLE ||
@@ -211,7 +212,7 @@ const ControlButton: React.FC<ControlButtonProps> = ({
     useShuttleEvents(shuttleControlEvents);
 
     const handleRun = (): void => {
-        const repurposeDoorAsPause = store.get('workspace.repurposeDoorAsPause', false);
+        const repurposeDoorAsPause = getServerSettingSync('repurposeDoorAsPause', false);
         
         console.assert(
             includes(
@@ -235,7 +236,7 @@ const ControlButton: React.FC<ControlButtonProps> = ({
         }
     };
     const handlePause = (): void => {
-        const repurposeDoorAsPause = store.get('workspace.repurposeDoorAsPause', false);
+        const repurposeDoorAsPause = getServerSettingSync('repurposeDoorAsPause', false);
         
         if (repurposeDoorAsPause) {
             // Send 0x84 hex character for door trigger

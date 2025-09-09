@@ -148,5 +148,23 @@ export function updateAllSettings(settings, eeprom) {
         });
     }
 
+    // Handle all server-side settings
+    if (window.serverSettingAppliers) {
+        const appliers = Object.values(window.serverSettingAppliers);
+        const serverPromises = appliers.map(applier => applier());
+        
+        // Wait for all server settings to be applied
+        Promise.all(serverPromises).then(results => {
+            const successCount = results.filter(Boolean).length;
+            const failCount = results.length - successCount;
+            
+            if (results.length > 0) {
+                console.log(`✓ Applied ${successCount} server settings${failCount > 0 ? ` (${failCount} failed)` : ''}`);
+            }
+        }).catch(error => {
+            console.error('Error applying server settings:', error);
+        });
+    }
+
     pubsub.publish('config:saved');
 }

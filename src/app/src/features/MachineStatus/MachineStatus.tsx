@@ -26,6 +26,7 @@ import cx from 'classnames';
 import get from 'lodash/get';
 import store from 'app/store';
 import controller from '../../lib/controller';
+import { getServerSettingSync } from 'app/features/Config/utils/ServerSettings.ts';
 import AlarmDescriptionIcon from './AlarmDescriptionIcon';
 import UnlockButton from './UnlockButton';
 import { UnlockButton as SmallUnlockButton } from 'app/features/UnlockButton';
@@ -196,7 +197,7 @@ export default connect((reduxStore) => {
         GRBL_ACTIVE_STATE_IDLE,
     );
     const isConnected = get(reduxStore, 'connection.isConnected', false);
-    const doorToPause = store.get('workspace.repurposeDoorAsPause', false);
+    const doorToPause = getServerSettingSync('repurposeDoorAsPause', false);
     return {
         $22,
         alarmCode,
