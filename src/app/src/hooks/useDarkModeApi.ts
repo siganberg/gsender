@@ -2,15 +2,20 @@ import { useEffect, useState, useCallback } from 'react';
 import apiStore from 'app/lib/apiStore';
 import store from 'app/store';
 
-export const useDarkMode = () => {
-    const [enableDarkMode, setEnableDarkModeState] = useState<boolean>(
+export const useDarkModeApi = () => {
+    const [enableDarkMode, setEnableDarkMode] = useState<boolean>(
         () => apiStore.get('enableDarkMode', false)
     );
+
+    const updateDarkMode = useCallback((newValue: boolean) => {
+        setEnableDarkMode(newValue);
+        apiStore.set('enableDarkMode', newValue);
+    }, []);
 
     useEffect(() => {
         const handleStoreChange = () => {
             const currentValue = store.get('workspace.enableDarkMode', false);
-            setEnableDarkModeState(currentValue);
+            setEnableDarkMode(currentValue);
         };
 
         store.on('change', handleStoreChange);
@@ -27,4 +32,9 @@ export const useDarkMode = () => {
             document.documentElement.classList.remove('dark');
         }
     }, [enableDarkMode]);
+
+    return {
+        enableDarkMode,
+        setEnableDarkMode: updateDarkMode
+    };
 };

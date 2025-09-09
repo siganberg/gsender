@@ -7,6 +7,7 @@ import { generateEEPROMSettings } from 'app/features/Config/utils/EEPROM.ts';
 import { toast } from 'sonner';
 import controller from 'app/lib/controller.ts';
 import pubsub from 'pubsub-js';
+import apiStore from 'app/lib/apiStore';
 
 export function exportFirmwareSettings(settings) {
     const output = JSON.stringify(settings);

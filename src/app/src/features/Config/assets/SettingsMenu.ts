@@ -204,7 +204,7 @@ export const SettingsMenu: SettingsMenuSection[] = [
                         key: 'workspace.enableDarkMode',
                         description:
                             'Change the app colours for reduced eye strain, better contrast, or just for fun!',
-                        type: 'boolean',
+                        type: 'api',
                     },
                     {
                         label: 'Visualizer theme',

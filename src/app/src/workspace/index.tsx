@@ -4,6 +4,7 @@ import get from 'lodash/get';
 
 import controller from 'app/lib/controller';
 import reduxStore from 'app/store/redux';
+import apiStore from 'app/lib/apiStore';
 import {
     GENERAL_CATEGORY,
     GRBL_ACTIVE_STATE_ALARM,
@@ -36,6 +37,10 @@ const Workspace = () => {
 
         document.title = `gSender ${pkg.version}`;
     }, [location]);
+
+    useEffect(() => {
+        apiStore.syncFromAPI();
+    }, []);
 
     useDarkMode();
 

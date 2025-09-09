@@ -7,6 +7,7 @@ import store from 'app/store';
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from 'app/store/redux';
+import apiStore from 'app/lib/apiStore';
 
 import {
     GRBL_HAL_SETTINGS,
@@ -96,7 +97,17 @@ export function useSettings() {
     return context;
 }
 
-function fetchStoreValue(key: string) {
+function fetchStoreValue(key: string, settingType?: string) {
+    if (settingType === 'api') {
+        try {
+            // For API settings, we still read from the regular store (workspace.*)
+            // but the API storage will handle the syncing
+            return store.get(key);
+        } catch (error) {
+            console.warn(`Error fetching API setting ${key}:`, error);
+            return false; // Fallback value
+        }
+    }
     return store.get(key);
 }
 
@@ -123,9 +134,13 @@ function populateSettingsValues(
         ss.settings.map((s) => {
             s.settings.map((o) => {
                 if (o.key && o.key.length > 0) {
-                    o.value = fetchStoreValue(o.key);
+                    o.value = fetchStoreValue(o.key, o.type);
                     o.globalIndex = index;
-                    o.defaultValue = fetchDefaultValue(o.key);
+                    if (o.type === 'api') {
+                        o.defaultValue = false;
+                    } else {
+                        o.defaultValue = fetchDefaultValue(o.key);
+                    }
                     globalValueReference.push({ ...o });
                     index++;
                 }

@@ -7,6 +7,8 @@ import { useSettings } from 'app/features/Config/utils/SettingsContext.tsx';
 import { matchesSearchTerm } from 'app/features/Config/utils/Settings.ts';
 import cn from 'classnames';
 import React from 'react';
+import apiStore from 'app/lib/apiStore';
+import store from 'app/store';
 
 interface SettingSectionProps {
     settings: gSenderSetting[];
@@ -24,14 +26,33 @@ export function SettingSection({
         useSettings();
 
     const changeHandler = (i) => (v) => {
-        setSettingsAreDirty(true);
-
         setSettingsValues((prev) => {
             const updated = [...prev];
+            
+            // Safety check to ensure the index exists
+            if (!updated[i]) {
+                console.warn(`Settings index ${i} not found in settingsValues array`);
+                return prev;
+            }
+            
             updated[i].value = v;
             updated[i].dirty = true;
 
             const curSetting = updated[i];
+            
+            // Handle API settings differently - save immediately
+            if (curSetting.type === 'api') {
+                // Convert workspace.enableDarkMode to enableDarkMode for API storage
+                const apiKey = curSetting.key.replace('workspace.', '');
+                apiStore.set(apiKey, v);
+                // Also update the regular store immediately to maintain consistency
+                store.set(curSetting.key, v);
+                updated[i].dirty = false; // Don't mark as dirty since it's already saved
+            } else {
+                // Only set dirty for non-API settings that need to be applied
+                setSettingsAreDirty(true);
+            }
+            
             // For just switches for now - if onDisable and false, run onDisable
             if (
                 curSetting.type === 'boolean' &&
