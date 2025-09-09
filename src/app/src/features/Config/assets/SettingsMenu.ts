@@ -203,10 +203,11 @@ export const SettingsMenu: SettingsMenuSection[] = [
                 settings: [
                     {
                         label: 'Dark mode',
-                        key: 'workspace.enableDarkMode',
+                        type: 'api',
+                        serverKey: 'enableDarkMode',
+                        defaultValue: false,
                         description:
-                            'Change the app colours for reduced eye strain, better contrast, or just for fun!',
-                        type: 'boolean',
+                            'Change the app colours for reduced eye strain, better contrast, or just for fun! This setting is now stored server-side and shared across all devices.',
                     },
                     {
                         label: 'Visualizer theme',

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { gSenderSetting, gSenderSettingsValues } from 'app/features/Config/assets/SettingsMenu.ts';
 import { getServerSetting, setServerSetting, serverSettings } from 'app/features/Config/utils/ServerSettings.ts';
+import { registerServerSettingApplier } from 'app/features/Config/utils/ServerSettingsBatch.ts';
 import { useSettings } from 'app/features/Config/utils/SettingsContext.tsx';
 import { BooleanSettingInput } from './BooleanSettingInput.tsx';
 import { SelectSettingInput } from './SelectSettingInput.tsx';
@@ -82,31 +83,29 @@ export const ServerSettingInput: React.FC<ServerSettingInputProps> = ({
 
     // This function will be called when Apply Settings is clicked
     const applyServerSideSetting = async () => {
-        try {
-            await api.setState({ [setting.serverKey]: value });
-            setOriginalValue(value);
-            
-            // Clear cache so consumers get the fresh value
-            serverSettings.clearCache();
-            
-            console.log(`✓ Applied '${setting.serverKey}' to server:`, value);
-            return true;
-        } catch (error) {
-            console.error(`Failed to apply '${setting.serverKey}' to server:`, error);
-            return false;
+        // Check if value actually changed
+        if (value === originalValue) {
+            return { settings: {}, changed: 0 };
         }
+
+        // Return the setting to be included in batch operation
+        const settings = { [setting.serverKey]: value };
+        
+        // Update original value since batch operation will handle the actual API call
+        setOriginalValue(value);
+        
+        // Clear cache so consumers get the fresh value
+        serverSettings.clearCache();
+        
+        console.log(`✓ Prepared '${setting.serverKey}' for batch update:`, value);
+        return { settings, changed: 1 };
     };
 
-    // Register apply function globally with unique ID
+    // Register apply function in unified batch system
     useEffect(() => {
-        if (!window.serverSettingAppliers) {
-            window.serverSettingAppliers = {};
-        }
-        window.serverSettingAppliers[settingId] = applyServerSideSetting;
+        const cleanup = registerServerSettingApplier(settingId, applyServerSideSetting);
         
-        return () => {
-            delete window.serverSettingAppliers?.[settingId];
-        };
+        return cleanup;
     }, [value]);
 
     if (loading) {

@@ -120,6 +120,28 @@ export function generateSenderSettings(settings) {
     return dirtySettings;
 }
 
+async function handleServerSettingsBatch() {
+    const { applyAllServerSettings } = await import('./ServerSettingsBatch');
+    
+    const result = await applyAllServerSettings();
+    
+    if (result.totalComponents === 0) {
+        return;
+    }
+    
+    if (result.success > 0) {
+        toast.success(`Applied ${result.success} server settings.`, {
+            position: 'bottom-right',
+        });
+    }
+    
+    if (result.failed > 0) {
+        toast.error(`Failed to apply ${result.failed} server settings.`, {
+            position: 'bottom-right',
+        });
+    }
+}
+
 export function updateAllSettings(settings, eeprom) {
     const eepromToChange = generateEEPROMSettings(eeprom);
     const eepromNumber = Object.keys(eepromToChange).length;
@@ -148,22 +170,9 @@ export function updateAllSettings(settings, eeprom) {
         });
     }
 
-    // Handle all server-side settings
+    // Handle all server-side settings in one unified batch
     if (window.serverSettingAppliers) {
-        const appliers = Object.values(window.serverSettingAppliers);
-        const serverPromises = appliers.map(applier => applier());
-        
-        // Wait for all server settings to be applied
-        Promise.all(serverPromises).then(results => {
-            const successCount = results.filter(Boolean).length;
-            const failCount = results.length - successCount;
-            
-            if (results.length > 0) {
-                console.log(`✓ Applied ${successCount} server settings${failCount > 0 ? ` (${failCount} failed)` : ''}`);
-            }
-        }).catch(error => {
-            console.error('Error applying server settings:', error);
-        });
+        handleServerSettingsBatch();
     }
 
     pubsub.publish('config:saved');

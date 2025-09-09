@@ -71,6 +71,63 @@ class ServerSettingsManager {
     }
 
     /**
+     * Set multiple settings in server-side storage at once (batch operation)
+     */
+    async setSettings(settings: Record<string, any>): Promise<{ success: string[], failed: string[] }> {
+        try {
+            await api.setState(settings);
+            
+            const success: string[] = [];
+            const failed: string[] = [];
+            
+            // Update cache and notify for each setting
+            for (const [key, value] of Object.entries(settings)) {
+                try {
+                    this.cache[key] = value;
+                    this.notifySettingChange(key, value);
+                    success.push(key);
+                } catch (error) {
+                    console.error(`Failed to process server setting '${key}':`, error);
+                    failed.push(key);
+                }
+            }
+            
+            return { success, failed };
+        } catch (error) {
+            console.error('Failed to set server settings (batch):', error);
+            return { success: [], failed: Object.keys(settings) };
+        }
+    }
+
+    /**
+     * Get multiple settings from server-side storage at once
+     * Note: Current API doesn't support batch get, so this makes individual calls
+     * but batches them for better performance
+     */
+    async getSettings(keys: string[], defaultValues: Record<string, any> = {}): Promise<Record<string, any>> {
+        const results: Record<string, any> = {};
+        
+        // Use Promise.all for parallel execution
+        const promises = keys.map(async (key) => {
+            try {
+                const value = await this.getSetting(key, defaultValues[key]);
+                return { key, value };
+            } catch (error) {
+                console.warn(`Failed to get server setting '${key}':`, error);
+                return { key, value: defaultValues[key] };
+            }
+        });
+        
+        const settledResults = await Promise.all(promises);
+        
+        settledResults.forEach(({ key, value }) => {
+            results[key] = value;
+        });
+        
+        return results;
+    }
+
+    /**
      * Notify other connected devices about setting changes
      */
     private notifySettingChange(key: string, value: any): void {
@@ -88,6 +145,7 @@ class ServerSettingsManager {
 
     /**
      * Batch migrate workspace settings to server-side storage
+     * Uses batch operations for better performance
      */
     async migrateWorkspaceSettings(): Promise<void> {
         if (this.migrationComplete) return;
@@ -101,7 +159,7 @@ class ServerSettingsManager {
             { server: 'workspace.safeRetractHeight', workspace: 'workspace.safeRetractHeight' },
             { server: 'workspace.outlineMode', workspace: 'workspace.outlineMode' },
             { server: 'workspace.sendUsageData', workspace: 'workspace.sendUsageData' },
-            { server: 'workspace.enableDarkMode', workspace: 'workspace.enableDarkMode' },
+            { server: 'enableDarkMode', workspace: 'workspace.enableDarkMode' },
             { server: 'workspace.customDecimalPlaces', workspace: 'workspace.customDecimalPlaces' },
             { server: 'workspace.shouldWarnZero', workspace: 'workspace.shouldWarnZero' },
             
@@ -136,28 +194,42 @@ class ServerSettingsManager {
             { server: 'workspace.repurposeDoorAsPause', workspace: 'workspace.repurposeDoorAsPause' },
         ];
 
-        let migratedCount = 0;
-        let errorCount = 0;
+        // Collect all settings that need migration in batch
+        const batchSettings: Record<string, any> = {};
+        let availableCount = 0;
 
         for (const setting of settingsToMigrate) {
-            try {
-                const workspaceValue = store.get(setting.workspace);
-                if (workspaceValue !== undefined) {
-                    const success = await this.setSetting(setting.server, workspaceValue);
-                    if (success) {
-                        migratedCount++;
-                        console.log(`✓ Migrated ${setting.workspace} → ${setting.server}`);
-                    } else {
-                        errorCount++;
-                    }
-                }
-            } catch (error) {
-                console.error(`✗ Failed to migrate ${setting.workspace}:`, error);
-                errorCount++;
+            const workspaceValue = store.get(setting.workspace);
+            if (workspaceValue !== undefined) {
+                batchSettings[setting.server] = workspaceValue;
+                availableCount++;
+                console.log(`📋 Prepared ${setting.workspace} → ${setting.server}:`, workspaceValue);
             }
         }
 
-        console.log(`Migration complete: ${migratedCount} settings migrated, ${errorCount} errors`);
+        if (availableCount === 0) {
+            console.log('No settings found to migrate.');
+            this.migrationComplete = true;
+            return;
+        }
+
+        console.log(`🚀 Migrating ${availableCount} settings in batch...`);
+
+        try {
+            const { success, failed } = await this.setSettings(batchSettings);
+            
+            console.log(`✅ Migration complete: ${success.length} settings migrated${failed.length > 0 ? `, ${failed.length} failed` : ''}`);
+            
+            if (failed.length > 0) {
+                console.error('❌ Failed to migrate:', failed);
+            } else {
+                console.log('🎉 All settings migrated successfully!');
+            }
+            
+        } catch (error) {
+            console.error('❌ Batch migration failed:', error);
+        }
+
         this.migrationComplete = true;
     }
 
@@ -210,6 +282,13 @@ export const getServerSettingSync = (key: string, defaultValue?: any) =>
 
 export const setServerSetting = (key: string, value: any) =>
     serverSettings.setSetting(key, value);
+
+// Batch operation convenience functions
+export const getServerSettings = (keys: string[], defaultValues?: Record<string, any>) =>
+    serverSettings.getSettings(keys, defaultValues);
+
+export const setServerSettings = (settings: Record<string, any>) =>
+    serverSettings.setSettings(settings);
 
 export const migrateWorkspaceSettings = () =>
     serverSettings.migrateWorkspaceSettings();
