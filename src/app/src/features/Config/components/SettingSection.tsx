@@ -1,14 +1,8 @@
-import {
-    gSenderSetting,
-    gSenderSubSection,
-} from 'app/features/Config/assets/SettingsMenu.ts';
+import { gSenderSetting } from 'app/features/Config/assets/SettingsMenu.ts';
 import { SettingRow } from 'app/features/Config/components/SettingRow.tsx';
 import { useSettings } from 'app/features/Config/utils/SettingsContext.tsx';
-import { matchesSearchTerm } from 'app/features/Config/utils/Settings.ts';
 import cn from 'classnames';
 import React from 'react';
-import apiStore from 'app/lib/apiStore';
-import store from 'app/store';
 
 interface SettingSectionProps {
     settings: gSenderSetting[];
