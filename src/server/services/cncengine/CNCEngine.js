@@ -690,6 +690,13 @@ class CNCEngine {
                 this.unload();
             });
 
+            // Handle server setting changes for cross-device synchronization
+            socket.on('server-setting-changed', (data) => {
+                log.debug(`Server setting changed: ${data.key} = ${data.value}`);
+                // Broadcast to all other connected clients except the sender
+                socket.broadcast.emit('server-setting-changed', data);
+            });
+
             socket.on('networkScan', (port, target) => {
                 this.networkDevices = [];
                 const options = {

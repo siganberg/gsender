@@ -1,5 +1,7 @@
 import api from 'app/api';
 import store from 'app/store';
+import pubsub from 'pubsub-js';
+import controller from 'app/lib/controller';
 
 /**
  * Server-side settings management utility
@@ -57,10 +59,30 @@ class ServerSettingsManager {
         try {
             await api.setState({ [key]: value });
             this.cache[key] = value;
+            
+            // Emit server setting change for real-time sync across devices
+            this.notifySettingChange(key, value);
+            
             return true;
         } catch (error) {
             console.error(`Failed to set server setting '${key}':`, error);
             return false;
+        }
+    }
+
+    /**
+     * Notify other connected devices about setting changes
+     */
+    private notifySettingChange(key: string, value: any): void {
+        // Publish locally for same-device tabs
+        pubsub.publish('server-setting-changed', { key, value });
+        
+        // Emit socket event for cross-device synchronization
+        if (controller && controller.socket && controller.connected) {
+            controller.socket.emit('server-setting-changed', { key, value });
+            console.log(`📡 Broadcast server setting change to all devices: ${key} = ${value}`);
+        } else {
+            console.warn('Controller not connected, server setting change not broadcasted to other devices');
         }
     }
 
@@ -156,6 +178,28 @@ class ServerSettingsManager {
 
 // Export singleton instance
 export const serverSettings = new ServerSettingsManager();
+
+// Subscribe to server setting changes to update cache for sync functions
+if (typeof window !== 'undefined') {
+    pubsub.subscribe('server-setting-changed', (msg, data) => {
+        // Update cache so sync functions return fresh values
+        serverSettings.clearCache();
+        serverSettings['cache'][data.key] = data.value;
+        console.log(`📡 Updated cache for '${data.key}' from local broadcast`);
+    });
+    
+    // Listen for server setting changes from other devices via Socket.IO
+    controller.addListener('server-setting-changed', (data) => {
+        // Update cache
+        serverSettings.clearCache();
+        serverSettings['cache'][data.key] = data.value;
+        
+        // Publish locally so UI components update
+        pubsub.publish('server-setting-changed', data);
+        
+        console.log(`🌐 Received server setting change from another device: ${data.key} = ${data.value}`);
+    });
+}
 
 // Export convenience functions
 export const getServerSetting = (key: string, defaultValue?: any) =>

@@ -7,6 +7,7 @@ import { SelectSettingInput } from './SelectSettingInput.tsx';
 import { NumberSettingInput } from './NumberSettingInput.tsx';
 import { RadioSettingInput } from './RadioSettingInput.tsx';
 import api from 'app/api';
+import pubsub from 'pubsub-js';
 
 interface ServerSettingInputProps {
     setting: gSenderSetting;
@@ -28,6 +29,19 @@ export const ServerSettingInput: React.FC<ServerSettingInputProps> = ({
 
     useEffect(() => {
         loadValue();
+        
+        // Subscribe to server setting changes for real-time sync
+        const token = pubsub.subscribe('server-setting-changed', (msg, data) => {
+            if (data.key === setting.serverKey) {
+                setValue(data.value);
+                setOriginalValue(data.value);
+                console.log(`🔄 Synced '${setting.serverKey}' from another device:`, data.value);
+            }
+        });
+        
+        return () => {
+            pubsub.unsubscribe(token);
+        };
     }, [setting.serverKey]);
 
     const loadValue = async () => {
