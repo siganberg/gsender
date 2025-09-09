@@ -1,5 +1,6 @@
 import api from 'app/api';
 import store from 'app/store';
+import pubsub from 'pubsub-js';
 
 export interface ApiStorageOptions {
     syncOnInit?: boolean;
@@ -66,9 +67,19 @@ class ApiStorage {
             const apiState = response.data;
 
             if (apiState && typeof apiState === 'object') {
+                let hasChanges = false;
                 Object.entries(apiState).forEach(([key, value]) => {
-                    store.set(`workspace.${key}`, value);
+                    const currentValue = store.get(`workspace.${key}`);
+                    if (currentValue !== value) {
+                        store.set(`workspace.${key}`, value);
+                        hasChanges = true;
+                    }
                 });
+                
+                // Trigger settings repopulation if there were changes
+                if (hasChanges) {
+                    pubsub.publish('repopulate');
+                }
             }
         } catch (error) {
             console.warn('Failed to sync from API:', error);
