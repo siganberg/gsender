@@ -114,6 +114,7 @@ export function generateSenderSettings(settings) {
             dirtySettings[s.key] = {
                 value: s.value,
                 onUpdate: s.onUpdate || null,
+                type: s.type || null,
             };
             s.dirty = false;
         }
@@ -139,9 +140,17 @@ export function updateAllSettings(settings, eeprom) {
     const updateableSettingsNumber = Object.keys(settingsToUpdate).length;
     if (updateableSettingsNumber > 0) {
         Object.keys(settingsToUpdate).map((k) => {
-            store.set(k, settingsToUpdate[k].value);
-            if (settingsToUpdate[k].onUpdate) {
-                settingsToUpdate[k].onUpdate();
+            const setting = settingsToUpdate[k];
+            store.set(k, setting.value);
+            
+            // Handle API settings - also sync to API server
+            if (setting.type === 'api') {
+                const apiKey = k.replace('workspace.', '');
+                apiStore.set(apiKey, setting.value);
+            }
+            
+            if (setting.onUpdate) {
+                setting.onUpdate();
             }
         });
         toast.success(`Updated ${updateableSettingsNumber} settings.`, {

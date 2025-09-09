@@ -26,6 +26,8 @@ export function SettingSection({
         useSettings();
 
     const changeHandler = (i) => (v) => {
+        setSettingsAreDirty(true);
+
         setSettingsValues((prev) => {
             const updated = [...prev];
             
@@ -39,19 +41,6 @@ export function SettingSection({
             updated[i].dirty = true;
 
             const curSetting = updated[i];
-            
-            // Handle API settings differently - save immediately
-            if (curSetting.type === 'api') {
-                // Convert workspace.enableDarkMode to enableDarkMode for API storage
-                const apiKey = curSetting.key.replace('workspace.', '');
-                apiStore.set(apiKey, v);
-                // Also update the regular store immediately to maintain consistency
-                store.set(curSetting.key, v);
-                updated[i].dirty = false; // Don't mark as dirty since it's already saved
-            } else {
-                // Only set dirty for non-API settings that need to be applied
-                setSettingsAreDirty(true);
-            }
             
             // For just switches for now - if onDisable and false, run onDisable
             if (
