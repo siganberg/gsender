@@ -1,6 +1,7 @@
 import api from 'app/api';
 import store from 'app/store';
 import pubsub from 'pubsub-js';
+import controller from 'app/lib/controller';
 
 export interface ApiStorageOptions {
     syncOnInit?: boolean;
@@ -22,6 +23,9 @@ class ApiStorage {
         if (this.options.syncOnInit) {
             this.syncFromAPI();
         }
+
+        // Listen for real-time state changes from other devices
+        this.setupSocketListener();
     }
 
     get<T = any>(key: string, defaultValue?: T): T {
@@ -31,6 +35,7 @@ class ApiStorage {
     async set<T = any>(key: string, value: T): Promise<void> {
         store.set(`workspace.${key}`, value);
 
+        console.log(`📤 ApiStorage: Setting ${key} = ${value}`); // eslint-disable-line no-console
         this.debounceApiUpdate(key, value);
     }
 
@@ -42,7 +47,10 @@ class ApiStorage {
 
         const timer = setTimeout(async () => {
             try {
-                await api.setState({ [key]: value });
+                console.log(`📡 ApiStorage: Sending to API: ${key} = ${value}`); // eslint-disable-line no-console
+                
+                const response = await api.setState({ [key]: value });
+                console.log(`✅ ApiStorage: API call successful for ${key}`, response); // eslint-disable-line no-console
             } catch (error) {
                 console.warn(`Failed to sync ${key} to API:`, error);
             }
@@ -117,9 +125,52 @@ class ApiStorage {
         }
     }
 
+    private setupSocketListener(): void {
+        // Listen for state changes broadcasted from the server
+        console.log('🔗 ApiStorage: Setting up socket listener for state:change');
+        controller.addListener('state:change', this.handleRemoteStateChange.bind(this));
+    }
+
+    private handleRemoteStateChange(stateChanges: Record<string, any>): void {
+        console.log('🔄 ApiStorage: Received remote state changes:', stateChanges);
+        let hasChanges = false;
+        
+        Object.entries(stateChanges).forEach(([key, value]) => {
+            const workspaceKey = `workspace.${key}`;
+            const currentValue = store.get(workspaceKey);
+            
+            console.log(`🔄 ApiStorage: Checking ${workspaceKey}: current=${currentValue}, new=${value}`);
+            
+            if (currentValue !== value) {
+                console.log(`🔄 ApiStorage: Updating ${workspaceKey} from ${currentValue} to ${value}`);
+                store.set(workspaceKey, value);
+                hasChanges = true;
+                
+                // For enableDarkMode, also trigger immediate visual update
+                if (key === 'enableDarkMode') {
+                    console.log(`🌙 ApiStorage: Applying dark mode immediately: ${value}`);
+                    if (value) {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                }
+            }
+        });
+
+        // Trigger settings repopulation if there were changes
+        if (hasChanges) {
+            console.log('🔄 ApiStorage: Publishing repopulate event');
+            pubsub.publish('repopulate');
+        }
+    }
+
     destroy(): void {
         this.debounceTimers.forEach(timer => clearTimeout(timer));
         this.debounceTimers.clear();
+        
+        // Remove socket listener
+        controller.removeListener('state:change', this.handleRemoteStateChange.bind(this));
     }
 }
 

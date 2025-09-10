@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import apiStore from 'app/lib/apiStore';
 import store from 'app/store';
 
 export const useDarkMode = () => {
     const [enableDarkMode, setEnableDarkModeState] = useState<boolean>(
-        () => apiStore.get('enableDarkMode', false)
+        () => store.get('workspace.enableDarkMode', false)
     );
 
     useEffect(() => {
