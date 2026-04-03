@@ -28,6 +28,7 @@ import { SerialPort } from 'serialport';
 import Evilscan from 'evilscan';
 import socketIO from 'socket.io';
 import { app } from 'electron';
+import pendant from '../pendant';
 import fs from 'fs';
 import path from 'path';
 //import socketioJwt from 'socketio-jwt';
@@ -172,6 +173,9 @@ class CNCEngine {
             pingInterval: 25000,
             maxHttpBufferSize: 40e6
         });
+
+        // Start pendant service (ESP-NOW dongle/pendant support)
+        pendant.start(this.io);
 
         this.io.use(async (socket, next) => {
             try {
@@ -736,6 +740,7 @@ class CNCEngine {
     }
 
     stop() {
+        pendant.stop();
         if (this.io) {
             this.io.close();
             this.io = null;
